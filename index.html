@@ -6,8 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="守护">
-<meta name="theme-color" content="#f7f6f3">
+<meta name="theme-color" content="#111111">
 <title>守护</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='36' fill='%23111111'/%3E%3Ccircle cx='80' cy='75' r='38' fill='%23f0c060'/%3E%3Ccircle cx='98' cy='60' r='28' fill='%23111111'/%3E%3Ccircle cx='80' cy='120' r='4' fill='%23f0c060' opacity='0.6'/%3E%3Ccircle cx='55' cy='110' r='3' fill='%23f0c060' opacity='0.4'/%3E%3Ccircle cx='103' cy='113' r='3' fill='%23f0c060' opacity='0.5'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='36' fill='%23111111'/%3E%3Ccircle cx='80' cy='75' r='38' fill='%23f0c060'/%3E%3Ccircle cx='98' cy='60' r='28' fill='%23111111'/%3E%3Ccircle cx='80' cy='120' r='4' fill='%23f0c060' opacity='0.6'/%3E%3Ccircle cx='55' cy='110' r='3' fill='%23f0c060' opacity='0.4'/%3E%3Ccircle cx='103' cy='113' r='3' fill='%23f0c060' opacity='0.5'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -25,6 +27,8 @@
   --water2: #55cad8;
   --stand: #3a9e6a;
   --stand2: #60c48e;
+  --poop: #c87941;
+  --poop2: #e8a06a;
   --danger: #d94040;
   --gold: #c8920a;
 }
@@ -156,7 +160,11 @@ body {
 }
 .sleep .module-dot { background: var(--sleep); box-shadow: 0 0 8px var(--sleep); }
 .water .module-dot { background: var(--water); box-shadow: 0 0 8px var(--water); }
-.stand .module-dot { background: var(--stand); box-shadow: 0 0 8px var(--stand); }
+.poop .module-dot { background: var(--poop); box-shadow: 0 0 8px var(--poop); }
+.poop .ring-fill { stroke: var(--poop); }
+.poop .toggle input:checked + .toggle-track { background: var(--poop); }
+.poop .dot-check.done { background: var(--poop); }
+.module-card.poop::before { background: linear-gradient(90deg, transparent, var(--poop), transparent); }
 
 .module-name {
   font-family: 'Syne', sans-serif;
@@ -787,6 +795,40 @@ body {
     </div>
   </div>
 
+  <!-- 拉了没 -->
+  <div class="module-card poop" id="poopCard">
+    <div class="module-header">
+      <div>
+        <div class="module-title-row">
+          <div class="module-dot"></div>
+          <div class="module-name">拉了没</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">每日打卡 · 养成好习惯</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="poopToggle" onchange="toggleModule('poop')">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="progress-area">
+      <div class="ring-wrap">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="ring-bg" cx="32" cy="32" r="28"/>
+          <circle class="ring-fill" id="poopRing" cx="32" cy="32" r="28" stroke-dasharray="176" stroke-dashoffset="176"/>
+        </svg>
+        <div class="ring-label" id="poopRingLabel">💩</div>
+      </div>
+      <div class="module-info">
+        <div class="info-main" id="poopMain">今日未打卡</div>
+        <div class="info-sub" id="poopSub">连续 <span id="poopStreak">0</span> 天打卡<br>点击记录今日</div>
+      </div>
+    </div>
+    <div class="module-action" style="margin-top:14px">
+      <button class="btn btn-primary" id="poopBtn" onclick="checkInPoop()" style="background:var(--poop);border-color:transparent;color:white;font-size:15px">今天拉了 ✓</button>
+    </div>
+  </div>
+
   <!-- 逃跑记录 -->
   <div class="escape-section" id="escapeSection" style="display:none">
     <div class="escape-title">
@@ -877,6 +919,7 @@ let state = JSON.parse(localStorage.getItem('guardian_v2') || 'null') || {
   sleep: { enabled: true, hour: 23, minute: 30, checkedToday: false, delayed: false, streak: 0, lastDate: '' },
   water: { enabled: true, count: 0, goal: 8, interval: 90, lastRemind: Date.now(), lastDate: '' },
   stand: { enabled: true, count: 0, goal: 8, lastRemind: Date.now(), lastDate: '' },
+  poop: { enabled: true, checkedToday: false, streak: 0, lastDate: '' },
   escapes: [],
   blockedByEscape: false
 };
@@ -889,6 +932,8 @@ function resetDailyIfNeeded() {
   const today = todayStr();
   if (state.water.lastDate !== today) { state.water.count = 0; state.water.lastDate = today; state.water.lastRemind = Date.now(); }
   if (state.stand.lastDate !== today) { state.stand.count = 0; state.stand.lastDate = today; state.stand.lastRemind = Date.now(); }
+  if (!state.poop) state.poop = { enabled: true, checkedToday: false, streak: 0, lastDate: '' };
+  if (state.poop.lastDate !== today) { state.poop.checkedToday = false; state.poop.lastDate = today; }
   if (state.sleep.lastDate !== today) {
     state.sleep.checkedToday = false;
     state.sleep.delayed = false;
@@ -909,7 +954,7 @@ function updateClock() {
 
 function renderAll() {
   resetDailyIfNeeded();
-  renderSleep(); renderWater(); renderStand(); renderEscapes(); renderStreak(); checkBlocked();
+  renderSleep(); renderWater(); renderStand(); renderPoop(); renderEscapes(); renderStreak(); checkBlocked();
 }
 
 function renderSleep() {
@@ -968,6 +1013,33 @@ function renderStand() {
   }
 }
 
+function renderPoop() {
+  const p = state.poop;
+  document.getElementById('poopToggle').checked = p.enabled;
+  document.getElementById('poopStreak').textContent = p.streak;
+  if (p.checkedToday) {
+    document.getElementById('poopMain').textContent = '今日已打卡 ✓';
+    document.getElementById('poopRingLabel').textContent = '✓';
+    document.getElementById('poopBtn').textContent = '今天已完成';
+    document.getElementById('poopBtn').disabled = true;
+    document.getElementById('poopBtn').style.opacity = '0.5';
+    setRing('poopRing', 1);
+  } else {
+    document.getElementById('poopMain').textContent = '今日未打卡';
+    document.getElementById('poopRingLabel').textContent = '💩';
+    document.getElementById('poopBtn').textContent = '今天拉了 ✓';
+    document.getElementById('poopBtn').disabled = false;
+    document.getElementById('poopBtn').style.opacity = '1';
+    setRing('poopRing', 0);
+  }
+}
+
+function checkInPoop() {
+  state.poop.checkedToday = true;
+  state.poop.streak++;
+  save(); renderAll();
+  showToast('打卡成功 💩 连续 ' + state.poop.streak + ' 天');
+}
 function renderEscapes() {
   const sec = document.getElementById('escapeSection');
   if (state.escapes.length === 0) { sec.style.display = 'none'; return; }
