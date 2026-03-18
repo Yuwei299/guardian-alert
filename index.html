@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="守护">
+<meta name="theme-color" content="#f7f6f3">
+<title>守护</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@300;400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f6f3;
+  --bg2: #ffffff;
+  --bg3: #eeece8;
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.13);
+  --text: #1a1814;
+  --text2: #6b6760;
+  --text3: #a09c96;
+  --sleep: #6b5ce7;
+  --sleep2: #9b8ff5;
+  --water: #2aa8bc;
+  --water2: #55cad8;
+  --stand: #3a9e6a;
+  --stand2: #60c48e;
+  --danger: #d94040;
+  --gold: #c8920a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── Header ── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 52px 24px 16px;
+  background: var(--bg);
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  color: var(--text2);
+  text-transform: uppercase;
+}
+
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(200,146,10,0.1);
+  border: 1px solid rgba(200,146,10,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--gold);
+}
+
+/* ── Clock ── */
+.clock-section {
+  padding: 20px 24px 24px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.time-display {
+  font-family: 'Syne', sans-serif;
+  font-size: 64px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.date-display {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Module cards ── */
+.modules {
+  padding: 0 16px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.module-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  transition: border-color 0.3s;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  opacity: 0.4;
+  border-radius: 20px 20px 0 0;
+}
+
+.module-card.sleep::before { background: linear-gradient(90deg, transparent, var(--sleep), transparent); }
+.module-card.water::before { background: linear-gradient(90deg, transparent, var(--water), transparent); }
+.module-card.stand::before { background: linear-gradient(90deg, transparent, var(--stand), transparent); }
+
+.module-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.module-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.module-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sleep .module-dot { background: var(--sleep); box-shadow: 0 0 8px var(--sleep); }
+.water .module-dot { background: var(--water); box-shadow: 0 0 8px var(--water); }
+.stand .module-dot { background: var(--stand); box-shadow: 0 0 8px var(--stand); }
+
+.module-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.module-status {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: right;
+  line-height: 1.4;
+}
+
+/* Toggle switch */
+.toggle {
+  position: relative;
+  width: 44px; height: 24px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.toggle input:checked + .toggle-track { border-color: transparent; }
+.sleep .toggle input:checked + .toggle-track { background: var(--sleep); }
+.water .toggle input:checked + .toggle-track { background: var(--water); }
+.stand .toggle input:checked + .toggle-track { background: var(--stand); }
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text2);
+  transition: all 0.3s;
+  pointer-events: none;
+}
+.toggle input:checked ~ .toggle-thumb { transform: translateX(20px); background: white; }
+
+/* Progress ring */
+.progress-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ring-wrap {
+  position: relative;
+  width: 64px; height: 64px;
+  flex-shrink: 0;
+}
+.ring-wrap svg { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--bg3); stroke-width: 4; }
+.ring-fill { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.sleep .ring-fill { stroke: var(--sleep); }
+.water .ring-fill { stroke: var(--water); }
+.stand .ring-fill { stroke: var(--stand); }
+.ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.module-info { flex: 1; }
+
+.info-main {
+  font-size: 22px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.info-sub {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.5;
+}
+
+.module-action {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'Noto Sans SC', sans-serif;
+  transition: all 0.2s;
+  text-align: center;
+}
+.btn:active { transform: scale(0.96); }
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--bg);
+  font-weight: 500;
+}
+.sleep .btn-primary { background: var(--sleep); }
+.water .btn-primary { background: var(--water); }
+.stand .btn-primary { background: var(--stand); }
+
+.settings-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.setting-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.setting-chip:active { border-color: var(--border2); }
+
+.dots-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.dot-check {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.dot-check.done { border-color: transparent; }
+.water .dot-check.done { background: var(--water); }
+.stand .dot-check.done { background: var(--stand); }
+
+/* ── Escape record ── */
+.escape-section {
+  background: var(--bg2);
+  border: 1px solid rgba(217,64,64,0.2);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 0 16px 12px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.escape-title {
+  font-size: 12px;
+  color: var(--danger);
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.escape-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.escape-item:last-child { border-bottom: none; }
+.escape-date { color: var(--text3); font-size: 11px; }
+.escape-reason { color: var(--text2); flex: 1; margin: 0 12px; }
+.escape-tag { color: var(--danger); font-size: 11px; }
+
+/* ── Alarm overlays ── */
+.alarm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 32px;
+  color: var(--text);
+}
+.alarm-overlay.show { display: flex; }
+.alarm-overlay.sleep-alarm { background: radial-gradient(ellipse at center, #ede9ff 0%, #f7f6f3 100%); }
+.alarm-overlay.water-alarm { background: radial-gradient(ellipse at center, #e4f7fa 0%, #f7f6f3 100%); }
+.alarm-overlay.stand-alarm { background: radial-gradient(ellipse at center, #e4f5ec 0%, #f7f6f3 100%); }
+
+.alarm-pulse {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  margin-bottom: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  position: relative;
+}
+.alarm-pulse::before, .alarm-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  animation: pulse-ring 2s ease-out infinite;
+}
+.alarm-pulse::after { animation-delay: 0.7s; }
+.sleep-alarm .alarm-pulse { background: rgba(107,92,231,0.15); }
+.sleep-alarm .alarm-pulse::before,
+.sleep-alarm .alarm-pulse::after { border: 2px solid rgba(107,92,231,0.3); }
+.water-alarm .alarm-pulse { background: rgba(42,168,188,0.15); }
+.water-alarm .alarm-pulse::before,
+.water-alarm .alarm-pulse::after { border: 2px solid rgba(42,168,188,0.3); }
+.stand-alarm .alarm-pulse { background: rgba(58,158,106,0.15); }
+.stand-alarm .alarm-pulse::before,
+.stand-alarm .alarm-pulse::after { border: 2px solid rgba(58,158,106,0.3); }
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.alarm-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.alarm-subtitle {
+  font-size: 15px;
+  color: var(--text2);
+  margin-bottom: 48px;
+  line-height: 1.6;
+}
+
+.alarm-btn-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alarm-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.alarm-btn:active { transform: scale(0.97); }
+.alarm-btn-confirm { color: white; }
+.sleep-alarm .alarm-btn-confirm { background: var(--sleep); }
+.water-alarm .alarm-btn-confirm { background: var(--water); }
+.stand-alarm .alarm-btn-confirm { background: var(--stand); }
+.alarm-btn-delay {
+  background: var(--bg3);
+  color: var(--text2);
+  border: 1px solid var(--border2) !important;
+}
+.alarm-btn-escape {
+  background: transparent;
+  color: var(--text3);
+  font-size: 13px;
+  padding: 10px;
+}
+
+.countdown-badge {
+  display: inline-block;
+  background: rgba(0,0,0,0.06);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 24px;
+}
+
+/* ── Reason overlay ── */
+.reason-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--bg);
+  display: none;
+  flex-direction: column;
+  padding: 60px 28px 40px;
+}
+.reason-overlay.show { display: flex; }
+
+.reason-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--danger);
+  margin-bottom: 8px;
+}
+.reason-sub {
+  font-size: 14px;
+  color: var(--text3);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+.reason-blocked {
+  background: rgba(217,64,64,0.06);
+  border: 1px solid rgba(217,64,64,0.15);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--text3);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.reason-input {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 16px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: 'Noto Sans SC', sans-serif;
+  resize: none;
+  outline: none;
+  min-height: 120px;
+  margin-bottom: 16px;
+}
+.reason-input:focus { border-color: var(--danger); }
+.reason-input::placeholder { color: var(--text3); }
+.reason-submit {
+  width: 100%;
+  padding: 16px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ── Modals ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  align-items: flex-end;
+}
+.modal-overlay.show { display: flex; }
+.modal-sheet {
+  width: 100%;
+  background: var(--bg2);
+  border-radius: 24px 24px 0 0;
+  border: 1px solid var(--border);
+  padding: 24px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+}
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+.time-picker-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.time-select {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 24px;
+  font-family: 'Syne', sans-serif;
+  padding: 12px;
+  text-align: center;
+  outline: none;
+}
+.time-colon {
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  color: var(--text2);
+  font-family: 'Syne', sans-serif;
+}
+.modal-actions { display: flex; gap: 10px; }
+.modal-cancel {
+  flex: 1;
+  padding: 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text2);
+  font-size: 15px;
+  cursor: pointer;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+.modal-confirm {
+  flex: 2;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+.modal-confirm.sleep { background: var(--sleep); }
+.modal-confirm.water { background: var(--water); }
+.modal-confirm.stand { background: var(--stand); }
+
+/* ── Notif bar ── */
+.notif-bar {
+  margin: 0 16px 12px;
+  background: rgba(107,92,231,0.08);
+  border: 1px solid rgba(107,92,231,0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text2);
+  position: relative;
+  z-index: 1;
+}
+.notif-btn {
+  margin-left: auto;
+  background: var(--sleep);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--bg2);
+  padding: 12px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 9999;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="notif-bar" id="notifBar" style="display:none">
+  <span>⚡</span>
+  <span>开启通知，才能收到提醒</span>
+  <button class="notif-btn" onclick="requestNotif()">开启</button>
+</div>
+
+<div class="header">
+  <div class="header-row">
+    <div class="app-name">守 护</div>
+    <div class="streak-badge">
+      <span>🔥</span>
+      <span id="streakNum">0</span> 天连续
+    </div>
+  </div>
+</div>
+
+<div class="clock-section">
+  <div class="time-display" id="clockDisplay">00:00</div>
+  <div class="date-display" id="dateDisplay">加载中...</div>
+</div>
+
+<div class="modules">
+
+  <!-- 睡了吗 -->
+  <div class="module-card sleep" id="sleepCard">
+    <div class="module-header">
+      <div>
+        <div class="module-title-row">
+          <div class="module-dot"></div>
+          <div class="module-name">睡了吗</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">固定时间强制提醒入睡</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="sleepToggle" onchange="toggleModule('sleep')">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="progress-area">
+      <div class="ring-wrap">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="ring-bg" cx="32" cy="32" r="28"/>
+          <circle class="ring-fill" id="sleepRing" cx="32" cy="32" r="28" stroke-dasharray="176" stroke-dashoffset="176"/>
+        </svg>
+        <div class="ring-label" id="sleepRingLabel">🌙</div>
+      </div>
+      <div class="module-info">
+        <div class="info-main" id="sleepTimeDisplay">23:30</div>
+        <div class="info-sub" id="sleepSubText">每天提醒入睡时间</div>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="setting-chip" onclick="openTimeModal('sleep')">🕐 修改时间</div>
+      <div class="setting-chip" id="sleepStreakChip">○ 今日未打卡</div>
+    </div>
+  </div>
+
+  <!-- 喝了吗 -->
+  <div class="module-card water" id="waterCard">
+    <div class="module-header">
+      <div>
+        <div class="module-title-row">
+          <div class="module-dot"></div>
+          <div class="module-name">喝了吗</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">定时提醒 · 每日目标 8 杯</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="waterToggle" onchange="toggleModule('water')">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="progress-area">
+      <div class="ring-wrap">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="ring-bg" cx="32" cy="32" r="28"/>
+          <circle class="ring-fill" id="waterRing" cx="32" cy="32" r="28" stroke-dasharray="176" stroke-dashoffset="176"/>
+        </svg>
+        <div class="ring-label" id="waterLabel">0</div>
+      </div>
+      <div class="module-info">
+        <div class="info-main" id="waterMain">0 / 8 杯</div>
+        <div class="info-sub">每 <span id="waterIntervalDisplay">90</span> 分钟提醒一次<br>点击杯子记录</div>
+      </div>
+    </div>
+    <div class="dots-row" id="waterDots"></div>
+    <div class="settings-row" style="margin-top:12px">
+      <div class="setting-chip" onclick="openIntervalModal()">⏱ <span id="waterIntervalChip">90分钟</span>提醒</div>
+      <div class="setting-chip" onclick="resetWater()">↺ 重置今日</div>
+    </div>
+  </div>
+
+  <!-- 站了吗 -->
+  <div class="module-card stand" id="standCard">
+    <div class="module-header">
+      <div>
+        <div class="module-title-row">
+          <div class="module-dot"></div>
+          <div class="module-name">站了吗</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px">每 1 小时站起来动一动</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="standToggle" onchange="toggleModule('stand')">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+    </div>
+    <div class="progress-area">
+      <div class="ring-wrap">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle class="ring-bg" cx="32" cy="32" r="28"/>
+          <circle class="ring-fill" id="standRing" cx="32" cy="32" r="28" stroke-dasharray="176" stroke-dashoffset="176"/>
+        </svg>
+        <div class="ring-label" id="standLabel">0</div>
+      </div>
+      <div class="module-info">
+        <div class="info-main" id="standMain">0 / 8 次</div>
+        <div class="info-sub">今日站立记录<br>每小时 1 首歌的时间</div>
+      </div>
+    </div>
+    <div class="dots-row" id="standDots"></div>
+    <div class="settings-row" style="margin-top:12px">
+      <div class="setting-chip">🎵 随机播歌提醒</div>
+    </div>
+  </div>
+
+  <!-- 逃跑记录 -->
+  <div class="escape-section" id="escapeSection" style="display:none">
+    <div class="escape-title">
+      <span style="width:6px;height:6px;background:var(--danger);border-radius:50%;display:inline-block"></span>
+      逃跑记录
+    </div>
+    <div id="escapeList"></div>
+  </div>
+
+</div>
+
+<!-- 睡觉弹窗 -->
+<div class="alarm-overlay sleep-alarm" id="sleepAlarm">
+  <div class="alarm-pulse">🌙</div>
+  <div class="countdown-badge" id="sleepCountdown">该睡觉了</div>
+  <div class="alarm-title">该睡觉了</div>
+  <div class="alarm-subtitle">现在是 <span id="alarmTimeShow"></span><br>你设定了 <span id="alarmSetTime">23:30</span> 入睡</div>
+  <div class="alarm-btn-group">
+    <button class="alarm-btn alarm-btn-confirm" onclick="confirmSleep()">我去睡了 🌙</button>
+    <button class="alarm-btn alarm-btn-delay" id="delayBtn" onclick="delaySleep()">再等 30 分钟（仅限一次）</button>
+    <button class="alarm-btn alarm-btn-escape" onclick="escapeSleep()">今天不想睡 →</button>
+  </div>
+</div>
+
+<!-- 喝水弹窗 -->
+<div class="alarm-overlay water-alarm" id="waterAlarm">
+  <div class="alarm-pulse">💧</div>
+  <div class="alarm-title">喝水时间</div>
+  <div class="alarm-subtitle">已经 <span id="waterAlarmTime">90</span> 分钟没喝水了<br>去倒一杯水吧</div>
+  <div class="alarm-btn-group">
+    <button class="alarm-btn alarm-btn-confirm" onclick="confirmWater()">已经喝了 ✓</button>
+    <button class="alarm-btn alarm-btn-delay" onclick="closeWaterAlarm()">先等一下</button>
+  </div>
+</div>
+
+<!-- 站立弹窗 -->
+<div class="alarm-overlay stand-alarm" id="standAlarm">
+  <div class="alarm-pulse">🧍</div>
+  <div class="alarm-title">起来动一动</div>
+  <div class="alarm-subtitle">坐了 1 小时了<br>站起来溜达一首歌的时间</div>
+  <div class="alarm-btn-group">
+    <button class="alarm-btn alarm-btn-confirm" onclick="confirmStand()">已经站起来了 ✓</button>
+    <button class="alarm-btn alarm-btn-delay" onclick="closeStandAlarm()">再坐一会儿</button>
+  </div>
+</div>
+
+<!-- 逃跑理由 -->
+<div class="reason-overlay" id="reasonOverlay">
+  <div class="reason-title">逃跑记录</div>
+  <div class="reason-sub">你选择了不睡觉。<br>写下今晚逃跑的理由，才能继续使用其他功能。</div>
+  <div class="reason-blocked">🔒 喝水提醒和站立提醒已暂停，写完理由后恢复</div>
+  <textarea class="reason-input" id="reasonInput" placeholder="今晚不睡是因为……（至少写 20 个字）"></textarea>
+  <button class="reason-submit" onclick="submitReason()">写完了，解锁功能</button>
+</div>
+
+<!-- 时间设置弹窗 -->
+<div class="modal-overlay" id="timeModal" onclick="closeModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title">设定睡觉时间</div>
+    <div class="time-picker-row">
+      <select class="time-select" id="modalHour"></select>
+      <div class="time-colon">:</div>
+      <select class="time-select" id="modalMinute"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="document.getElementById('timeModal').classList.remove('show')">取消</button>
+      <button class="modal-confirm sleep" onclick="saveModalTime()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 间隔设置弹窗 -->
+<div class="modal-overlay" id="intervalModal" onclick="closeIntervalModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title">喝水提醒间隔</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      <div class="setting-chip" style="justify-content:center;font-size:15px;padding:14px" onclick="setWaterInterval(60)">每 60 分钟</div>
+      <div class="setting-chip" style="justify-content:center;font-size:15px;padding:14px" onclick="setWaterInterval(90)">每 90 分钟</div>
+      <div class="setting-chip" style="justify-content:center;font-size:15px;padding:14px" onclick="setWaterInterval(120)">每 2 小时</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let state = JSON.parse(localStorage.getItem('guardian_v2') || 'null') || {
+  sleep: { enabled: true, hour: 23, minute: 30, checkedToday: false, delayed: false, streak: 0, lastDate: '' },
+  water: { enabled: true, count: 0, goal: 8, interval: 90, lastRemind: Date.now(), lastDate: '' },
+  stand: { enabled: true, count: 0, goal: 8, lastRemind: Date.now(), lastDate: '' },
+  escapes: [],
+  blockedByEscape: false
+};
+
+function save() { localStorage.setItem('guardian_v2', JSON.stringify(state)); }
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+function resetDailyIfNeeded() {
+  const today = todayStr();
+  if (state.water.lastDate !== today) { state.water.count = 0; state.water.lastDate = today; state.water.lastRemind = Date.now(); }
+  if (state.stand.lastDate !== today) { state.stand.count = 0; state.stand.lastDate = today; state.stand.lastRemind = Date.now(); }
+  if (state.sleep.lastDate !== today) {
+    state.sleep.checkedToday = false;
+    state.sleep.delayed = false;
+    state.sleep.lastDate = today;
+    if (state.blockedByEscape) state.blockedByEscape = false;
+  }
+  save();
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clockDisplay').textContent = h + ':' + m;
+  const days = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  document.getElementById('dateDisplay').textContent = `${now.getMonth()+1}月${now.getDate()}日  ${days[now.getDay()]}`;
+}
+
+function renderAll() {
+  resetDailyIfNeeded();
+  renderSleep(); renderWater(); renderStand(); renderEscapes(); renderStreak(); checkBlocked();
+}
+
+function renderSleep() {
+  const s = state.sleep;
+  document.getElementById('sleepToggle').checked = s.enabled;
+  const timeStr = String(s.hour).padStart(2,'0') + ':' + String(s.minute).padStart(2,'0');
+  document.getElementById('sleepTimeDisplay').textContent = timeStr;
+  document.getElementById('alarmSetTime').textContent = timeStr;
+  const now = new Date();
+  const target = new Date(); target.setHours(s.hour, s.minute, 0, 0);
+  if (target < now) target.setDate(target.getDate()+1);
+  const diffMs = target - now;
+  const diffH = Math.floor(diffMs / 3600000);
+  const diffM = Math.floor((diffMs % 3600000) / 60000);
+  document.getElementById('sleepSubText').textContent = s.checkedToday ? '今晚已准时入睡 ✓' : `距离提醒还有 ${diffH}h ${diffM}m`;
+  const pct = s.checkedToday ? 1 : Math.max(0, 1 - diffMs / (24*3600000));
+  setRing('sleepRing', pct);
+  document.getElementById('sleepRingLabel').textContent = s.checkedToday ? '✓' : '🌙';
+  document.getElementById('sleepStreakChip').textContent = s.checkedToday ? '✓ 今日已打卡' : '○ 今日未打卡';
+  document.getElementById('sleepStreakChip').style.color = s.checkedToday ? 'var(--stand2)' : 'var(--text3)';
+}
+
+function renderWater() {
+  const w = state.water;
+  document.getElementById('waterToggle').checked = w.enabled;
+  document.getElementById('waterMain').textContent = `${w.count} / ${w.goal} 杯`;
+  document.getElementById('waterLabel').textContent = w.count;
+  document.getElementById('waterIntervalDisplay').textContent = w.interval;
+  document.getElementById('waterIntervalChip').textContent = w.interval + '分钟';
+  setRing('waterRing', w.count / w.goal);
+  const dots = document.getElementById('waterDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < w.goal; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-check' + (i < w.count ? ' done' : '');
+    d.textContent = i < w.count ? '💧' : '';
+    d.onclick = () => { if (i >= w.count) { state.water.count++; save(); renderAll(); showToast('记录一杯水 💧'); } };
+    dots.appendChild(d);
+  }
+}
+
+function renderStand() {
+  const s = state.stand;
+  document.getElementById('standToggle').checked = s.enabled;
+  document.getElementById('standMain').textContent = `${s.count} / ${s.goal} 次`;
+  document.getElementById('standLabel').textContent = s.count;
+  setRing('standRing', s.count / s.goal);
+  const dots = document.getElementById('standDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < s.goal; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot-check' + (i < s.count ? ' done' : '');
+    d.textContent = i < s.count ? '🧍' : '';
+    d.onclick = () => { if (i >= s.count) { confirmStandManual(); } };
+    dots.appendChild(d);
+  }
+}
+
+function renderEscapes() {
+  const sec = document.getElementById('escapeSection');
+  if (state.escapes.length === 0) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  document.getElementById('escapeList').innerHTML = state.escapes.slice(-5).reverse().map(e => `
+    <div class="escape-item">
+      <span class="escape-date">${e.date}</span>
+      <span class="escape-reason">${e.reason.slice(0,30)}${e.reason.length>30?'…':''}</span>
+      <span class="escape-tag">逃跑</span>
+    </div>`).join('');
+}
+
+function renderStreak() {
+  document.getElementById('streakNum').textContent = state.sleep.streak;
+}
+
+function setRing(id, pct) {
+  document.getElementById(id).style.strokeDashoffset = 176 - Math.min(1, pct) * 176;
+}
+
+function toggleModule(mod) {
+  state[mod].enabled = document.getElementById(mod+'Toggle').checked;
+  save(); renderAll();
+  showToast(state[mod].enabled ? '已开启' : '已关闭');
+}
+
+function checkSleepTime() {
+  if (!state.sleep.enabled || state.sleep.checkedToday) return;
+  const now = new Date();
+  if (now.getHours() === state.sleep.hour && now.getMinutes() === state.sleep.minute) showSleepAlarm();
+}
+
+function showSleepAlarm() {
+  const now = new Date();
+  document.getElementById('alarmTimeShow').textContent = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('sleepAlarm').classList.add('show');
+  document.getElementById('delayBtn').style.display = state.sleep.delayed ? 'none' : 'block';
+  vibrate();
+}
+
+function confirmSleep() {
+  state.sleep.checkedToday = true;
+  state.sleep.streak++;
+  save();
+  document.getElementById('sleepAlarm').classList.remove('show');
+  showToast('晚安 🌙 连续 ' + state.sleep.streak + ' 天准时入睡');
+  renderAll();
+}
+
+function delaySleep() {
+  if (state.sleep.delayed) return;
+  state.sleep.delayed = true; save();
+  document.getElementById('sleepAlarm').classList.remove('show');
+  showToast('好，30分钟后再提醒你');
+  setTimeout(() => showSleepAlarm(), 30 * 60 * 1000);
+}
+
+function escapeSleep() {
+  document.getElementById('sleepAlarm').classList.remove('show');
+  state.sleep.streak = 0;
+  state.blockedByEscape = true; save();
+  document.getElementById('reasonOverlay').classList.add('show');
+}
+
+function submitReason() {
+  const txt = document.getElementById('reasonInput').value.trim();
+  if (txt.length < 20) { showToast('再多写几个字…至少 20 字'); return; }
+  state.escapes.push({ date: todayStr(), reason: txt });
+  state.blockedByEscape = false;
+  document.getElementById('reasonInput').value = '';
+  document.getElementById('reasonOverlay').classList.remove('show');
+  save(); renderAll();
+  showToast('已记录，功能已恢复');
+}
+
+function checkBlocked() {
+  const blocked = state.blockedByEscape;
+  document.getElementById('waterCard').style.opacity = blocked ? '0.4' : '1';
+  document.getElementById('standCard').style.opacity = blocked ? '0.4' : '1';
+  document.getElementById('waterToggle').disabled = blocked;
+  document.getElementById('standToggle').disabled = blocked;
+}
+
+function checkWaterTime() {
+  if (!state.water.enabled || state.blockedByEscape) return;
+  const now = Date.now();
+  if (now - state.water.lastRemind >= state.water.interval * 60 * 1000) {
+    document.getElementById('waterAlarmTime').textContent = Math.round((now - state.water.lastRemind) / 60000);
+    document.getElementById('waterAlarm').classList.add('show');
+    state.water.lastRemind = now; save(); vibrate();
+  }
+}
+
+function confirmWater() {
+  state.water.count = Math.min(state.water.count + 1, state.water.goal);
+  state.water.lastRemind = Date.now(); save();
+  document.getElementById('waterAlarm').classList.remove('show');
+  renderAll();
+  showToast('记录一杯水 💧 今日 ' + state.water.count + ' 杯');
+}
+
+function closeWaterAlarm() { document.getElementById('waterAlarm').classList.remove('show'); }
+function resetWater() { state.water.count = 0; save(); renderAll(); showToast('今日喝水记录已重置'); }
+
+function checkStandTime() {
+  if (!state.stand.enabled || state.blockedByEscape) return;
+  if (Date.now() - state.stand.lastRemind >= 60 * 60 * 1000) {
+    document.getElementById('standAlarm').classList.add('show');
+    state.stand.lastRemind = Date.now(); save(); vibrate();
+  }
+}
+
+function confirmStand() {
+  state.stand.count = Math.min(state.stand.count + 1, state.stand.goal);
+  state.stand.lastRemind = Date.now(); save();
+  document.getElementById('standAlarm').classList.remove('show');
+  renderAll();
+  showToast('站起来了！今日 ' + state.stand.count + ' 次 🧍');
+}
+
+function confirmStandManual() {
+  state.stand.count = Math.min(state.stand.count + 1, state.stand.goal);
+  save(); renderAll();
+  showToast('手动记录站立 🧍');
+}
+
+function closeStandAlarm() { document.getElementById('standAlarm').classList.remove('show'); }
+
+function openTimeModal(target) {
+  const s = state.sleep;
+  const hSel = document.getElementById('modalHour');
+  const mSel = document.getElementById('modalMinute');
+  hSel.innerHTML = '';
+  for (let i = 0; i < 24; i++) {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = String(i).padStart(2,'0');
+    if (i === s.hour) o.selected = true;
+    hSel.appendChild(o);
+  }
+  mSel.innerHTML = '';
+  for (let i = 0; i < 60; i += 5) {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = String(i).padStart(2,'0');
+    if (i === s.minute) o.selected = true;
+    mSel.appendChild(o);
+  }
+  document.getElementById('timeModal').classList.add('show');
+}
+
+function saveModalTime() {
+  state.sleep.hour = parseInt(document.getElementById('modalHour').value);
+  state.sleep.minute = parseInt(document.getElementById('modalMinute').value);
+  save(); renderAll();
+  document.getElementById('timeModal').classList.remove('show');
+  showToast('睡觉时间已更新');
+}
+
+function closeModal(e) { if (e.target === document.getElementById('timeModal')) document.getElementById('timeModal').classList.remove('show'); }
+function openIntervalModal() { document.getElementById('intervalModal').classList.add('show'); }
+function closeIntervalModal(e) { if (e.target === document.getElementById('intervalModal')) document.getElementById('intervalModal').classList.remove('show'); }
+
+function setWaterInterval(mins) {
+  state.water.interval = mins; save(); renderAll();
+  document.getElementById('intervalModal').classList.remove('show');
+  showToast('喝水提醒设为每 ' + mins + ' 分钟');
+}
+
+function requestNotif() {
+  if ('Notification' in window) {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') { document.getElementById('notifBar').style.display = 'none'; showToast('通知已开启 ✓'); }
+    });
+  }
+}
+
+function vibrate() { if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function tick() { updateClock(); checkSleepTime(); checkWaterTime(); checkStandTime(); }
+
+document.getElementById('sleepStreakChip').onclick = function() {
+  if (!state.sleep.checkedToday) showSleepAlarm();
+};
+
+if ('Notification' in window && Notification.permission !== 'granted') {
+  document.getElementById('notifBar').style.display = 'flex';
+}
+
+updateClock();
+setInterval(tick, 30000);
+renderAll();
+</script>
+</body>
+</html>
